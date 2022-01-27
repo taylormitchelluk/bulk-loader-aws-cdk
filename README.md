@@ -1,6 +1,8 @@
-# Welcome to your CDK TypeScript project!
+# Bulk Loader
 
-This is a blank project for TypeScript development with CDK.
+Purpose: Queue large csv/xls data files and trickle data to destination.
+
+Will load csv/xls to s3, notify, read, validate, push to queue, and push to destination.
 
 The `cdk.json` file tells the CDK Toolkit how to execute your app.
 
@@ -12,8 +14,7 @@ The `cdk.json` file tells the CDK Toolkit how to execute your app.
  * `cdk deploy`      deploy this stack to your default AWS account/region
  * `cdk diff`        compare deployed stack with current state
  * `cdk synth`       emits the synthesized CloudFormation template
-
-
+ 
 ### Required.
 
 Set source ip.
