@@ -7,6 +7,8 @@ import {
   aws_s3_notifications as s3n,
   aws_lambda as lambda,
   aws_sns_subscriptions as subscriptions,
+  aws_sqs as sqs,
+  aws_lambda_event_sources as events,
 } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import * as path from 'path';
@@ -75,6 +77,7 @@ export class BulkLoaderStack extends Stack {
 
     /**
      * SNS
+     * TODO: remove, can use S3EventSource direct to lambda.
      */
     const dataSourceAddedNotification = new sns.Topic(this, 'DataSourceAdded');
     dataStoreBucket.addEventNotification(
@@ -88,10 +91,13 @@ export class BulkLoaderStack extends Stack {
      */
     const readerLambda = new lambda.Function(this, 'Reader', {
       runtime: lambda.Runtime.NODEJS_14_X,
-      handler: 'index.handler',
-      code: lambda.Code.fromAsset(path.join(__dirname, 'Reader'))
+      handler: 'reader.read',
+      code: lambda.Code.fromAsset('resources'),
     });
 
+    /**
+     * Subscribe reader Lambda to sns notification.
+     */
     const readerLambdaSubscription = new subscriptions.LambdaSubscription(readerLambda)
     dataSourceAddedNotification.addSubscription(readerLambdaSubscription);
 
@@ -99,9 +105,20 @@ export class BulkLoaderStack extends Stack {
      * SQS
      * FIFO.
      */
+    const senderQueue = new sqs.Queue(this, 'SenderQueue.fifo');
 
     /**
      * Lambda - Sender.
      */
+    const senderLambda = new lambda.Function(this, 'Sender', {
+      runtime: lambda.Runtime.NODEJS_14_X,
+      handler: 'sender.send',
+      code: lambda.Code.fromAsset('resources'),
+    });
+
+    /**
+     * Add SenderQueue as event source for SenderLambda.
+     */
+    senderLambda.addEventSource(new events.SqsEventSource(senderQueue));
   }
 }
